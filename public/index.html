@@ -281,6 +281,36 @@
 
     .remove-block:hover { color: #999 !important; border-color: #ddd !important; background: #fff !important; }
 
+    /* Drag and drop */
+    .drag-handle {
+      cursor: grab;
+      color: #d0d0d0;
+      flex-shrink: 0;
+      padding: 0 4px 0 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .drag-handle:hover { color: #aaa; }
+    .drag-handle:active { cursor: grabbing; }
+
+    .schedule-block.dragging { opacity: 0.35; }
+
+    .drop-indicator {
+      height: 0;
+      background: transparent;
+      border-radius: 2px;
+      transition: height 0.1s, margin 0.1s;
+      margin: 0;
+    }
+
+    .drop-indicator.active {
+      height: 4px;
+      background: #4f8ef7;
+      margin: 4px 0;
+      border-radius: 2px;
+    }
+
     .total-time {
       text-align: center;
       margin-top: 16px;
@@ -656,6 +686,24 @@
       generateBtn.disabled = !hasActivity;
     }
 
+    const activityTimes = {
+      "Focused task":        { min: 30, max: 45 },
+      "Organize to-do list": { min: 15, max: 15 },
+      "Email catch-up":      { min: 15, max: 15 },
+      "Read a book":         { min: 30, max: 60 },
+      "Journal":             { min: 15, max: 30 },
+      "Draw / paint":        { min: 30, max: 60 },
+      "Reply to messages":   { min: 15, max: 15 },
+      "Call someone":        { min: 15, max: 30 },
+      "Make plans":          { min: 15, max: 15 },
+      "Go for a walk":       { min: 30, max: 90 },
+      "Stretch":             { min: 15, max: 30 },
+      "Lift":                { min: 30, max: 45 },
+      "Tidy up room":        { min: 15, max: 45 },
+      "Kitchen clean-up":    { min: 15, max: 30 },
+      "Do laundry":          { min: 75, max: 75 }
+    };
+
     function roundTo15(n) { return Math.max(15, Math.round(n / 15) * 15); }
 
     function formatMin(mins) {
@@ -665,27 +713,58 @@
       return m ? `${h} hr ${m} min` : `${h} hr`;
     }
 
+    function allocateTimes(activityList, total) {
+      const ranges = activityList.map(a => activityTimes[a] || { min: 15, max: 60 });
+      const mins = ranges.map(r => r.min);
+      const maxs = ranges.map(r => r.max);
+      const sumMin = mins.reduce((a, b) => a + b, 0);
+      const sumMax = maxs.reduce((a, b) => a + b, 0);
+
+      let rawTimes;
+      if (sumMin >= total) {
+        // Scale down proportionally from mins
+        rawTimes = mins.map(m => (m / sumMin) * total);
+      } else if (total >= sumMax) {
+        // Scale up proportionally from maxes
+        rawTimes = maxs.map(m => (m / sumMax) * total);
+      } else {
+        // Distribute surplus above mins proportionally to flexibility
+        const surplus = total - sumMin;
+        const flexes = ranges.map(r => r.max - r.min);
+        const totalFlex = flexes.reduce((a, b) => a + b, 0);
+        rawTimes = mins.map((m, i) =>
+          m + (totalFlex > 0 ? (flexes[i] / totalFlex) * surplus : surplus / activityList.length)
+        );
+      }
+
+      // Round each to 15 min
+      let times = rawTimes.map(t => Math.max(15, roundTo15(t)));
+
+      // Nudge to hit exact total
+      for (let i = 0; i < 40; i++) {
+        const sum = times.reduce((a, b) => a + b, 0);
+        const diff = total - sum;
+        if (diff === 0) break;
+        // Pick most flexible item to adjust
+        const idx = times.reduce((best, t, j) => {
+          const headroom = diff > 0 ? maxs[j] - t : t - 15;
+          const bestHeadroom = diff > 0 ? maxs[best] - times[best] : times[best] - 15;
+          return headroom > bestHeadroom ? j : best;
+        }, 0);
+        if (diff > 0) times[idx] += 15;
+        else if (times[idx] > 15) times[idx] -= 15;
+        else break;
+      }
+
+      return times;
+    }
+
     function buildScheduleItems() {
       const all = [];
       Object.keys(categoryMeta).forEach(key => {
         selectedActivities[key].forEach(activity => all.push({ key, activity }));
       });
-
-      const total = selectedMinutes;
-      const count = all.length;
-      const baseTime = roundTo15(total / count);
-      let times = all.map(() => baseTime);
-
-      let sum = times.reduce((a, b) => a + b, 0);
-      while (sum > total && times.some(t => t > 15)) {
-        const maxIdx = times.indexOf(Math.max(...times));
-        times[maxIdx] = Math.max(15, times[maxIdx] - 15);
-        sum = times.reduce((a, b) => a + b, 0);
-      }
-
-      const leftover = total - times.reduce((a, b) => a + b, 0);
-      if (leftover >= 15) times[0] += leftover;
-
+      const times = allocateTimes(all.map(a => a.activity), selectedMinutes);
       scheduleItems = all.map((item, i) => ({
         id: nextId++,
         key: item.key,
@@ -694,14 +773,31 @@
       }));
     }
 
+    function makeDropIndicator() {
+      const d = document.createElement("div");
+      d.className = "drop-indicator";
+      return d;
+    }
+
     function renderScheduleBlocks() {
       scheduleEl.innerHTML = "";
+      scheduleEl.appendChild(makeDropIndicator());
+
       scheduleItems.forEach(item => {
         const cat = categoryMeta[item.key];
         const el = document.createElement("div");
         el.className = "schedule-block";
+        el.draggable = true;
+        el.dataset.id = String(item.id);
         el.style.setProperty("--color", cat.color);
         el.innerHTML = `
+          <div class="drag-handle">
+            <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
+              <circle cx="3" cy="3" r="1.5"/><circle cx="7" cy="3" r="1.5"/>
+              <circle cx="3" cy="8" r="1.5"/><circle cx="7" cy="8" r="1.5"/>
+              <circle cx="3" cy="13" r="1.5"/><circle cx="7" cy="13" r="1.5"/>
+            </svg>
+          </div>
           <div class="block-icon">${cat.icon}</div>
           <div class="block-info">
             <div class="block-category">${cat.label}</div>
@@ -715,14 +811,74 @@
           </div>
         `;
         scheduleEl.appendChild(el);
+        scheduleEl.appendChild(makeDropIndicator());
       });
+
       updateTotal();
       renderAddTaskPicker();
+      setupDragAndDrop();
     }
 
     function updateTotal() {
       const total = scheduleItems.reduce((a, b) => a + b.duration, 0);
       totalLabel.textContent = total > 0 ? `Total: ${formatMin(total)} planned` : "";
+    }
+
+    // Drag and drop
+    let dragId = null;
+
+    function setupDragAndDrop() {
+      const blocks = scheduleEl.querySelectorAll(".schedule-block");
+      const indicators = scheduleEl.querySelectorAll(".drop-indicator");
+
+      function clearIndicators() {
+        indicators.forEach(d => d.classList.remove("active"));
+      }
+
+      blocks.forEach(block => {
+        block.addEventListener("dragstart", e => {
+          dragId = parseInt(block.dataset.id);
+          e.dataTransfer.effectAllowed = "move";
+          setTimeout(() => block.classList.add("dragging"), 0);
+        });
+
+        block.addEventListener("dragend", () => {
+          block.classList.remove("dragging");
+          clearIndicators();
+          dragId = null;
+        });
+
+        block.addEventListener("dragover", e => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          if (parseInt(block.dataset.id) === dragId) return;
+          clearIndicators();
+          const rect = block.getBoundingClientRect();
+          const before = e.clientY < rect.top + rect.height / 2;
+          const target = before ? block.previousElementSibling : block.nextElementSibling;
+          if (target && target.classList.contains("drop-indicator")) {
+            target.classList.add("active");
+          }
+        });
+
+        block.addEventListener("drop", e => {
+          e.preventDefault();
+          clearIndicators();
+          const dropId = parseInt(block.dataset.id);
+          if (dragId === null || dragId === dropId) return;
+
+          const fromIdx = scheduleItems.findIndex(i => i.id === dragId);
+          const toIdx   = scheduleItems.findIndex(i => i.id === dropId);
+          const rect = block.getBoundingClientRect();
+          const insertAfter = e.clientY >= rect.top + rect.height / 2;
+
+          const [item] = scheduleItems.splice(fromIdx, 1);
+          const newToIdx = scheduleItems.findIndex(i => i.id === dropId);
+          scheduleItems.splice(insertAfter ? newToIdx + 1 : newToIdx, 0, item);
+          dragId = null;
+          renderScheduleBlocks();
+        });
+      });
     }
 
     // Event delegation for time controls + remove
@@ -798,8 +954,8 @@
     });
 
     document.getElementById("start-over-btn").addEventListener("click", () => {
-      selectedMinutes = null;
-      document.querySelectorAll(".time-btn").forEach(b => b.classList.remove("selected"));
+      timeWheel.scrollTop = 0;
+      updateWheel();
 
       Object.keys(selectedActivities).forEach(k => selectedActivities[k].clear());
       document.querySelectorAll(".cat-item").forEach(item => {
