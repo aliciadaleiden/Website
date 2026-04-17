@@ -33,22 +33,79 @@
 
     .step { margin-bottom: 40px; }
 
-    /* Time buttons */
-    .time-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-
-    .time-btn {
-      padding: 10px 20px;
-      border-radius: 100px;
-      border: 2px solid rgba(0,0,0,0.12);
-      background: rgba(255,255,255,0.8);
-      font-size: 0.95rem;
-      cursor: pointer;
-      transition: all 0.15s;
-      font-weight: 500;
+    /* Time wheel */
+    .time-wheel-wrap {
+      position: relative;
+      height: 120px;
+      width: 220px;
+      border-radius: 16px;
+      background: #fff;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
     }
 
-    .time-btn:hover { border-color: #aaa; background: #fff; }
-    .time-btn.selected { background: #2c2c2c; border-color: #2c2c2c; color: #fff; }
+    .time-wheel {
+      height: 100%;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .time-wheel::-webkit-scrollbar { display: none; }
+
+    .tw-spacer { height: 40px; }
+
+    .tw-item {
+      height: 40px;
+      scroll-snap-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      color: #ccc;
+      font-weight: 500;
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.1s;
+    }
+
+    .tw-item.active {
+      color: #2c2c2c;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .tw-overlay-top, .tw-overlay-bottom {
+      position: absolute;
+      left: 0; right: 0;
+      height: 44px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .tw-overlay-top {
+      top: 0;
+      background: linear-gradient(to bottom, #fff 30%, transparent);
+    }
+
+    .tw-overlay-bottom {
+      bottom: 0;
+      background: linear-gradient(to top, #fff 30%, transparent);
+    }
+
+    .tw-selector {
+      position: absolute;
+      top: 50%;
+      left: 14px; right: 14px;
+      transform: translateY(-50%);
+      height: 40px;
+      border-top: 1.5px solid rgba(0,0,0,0.1);
+      border-bottom: 1.5px solid rgba(0,0,0,0.1);
+      border-radius: 8px;
+      pointer-events: none;
+      z-index: 1;
+    }
 
     /* Category accordion */
     .category-list { display: flex; flex-direction: column; gap: 10px; }
@@ -360,14 +417,21 @@
 
     <div class="step">
       <div class="section-label">How much time do you have?</div>
-      <div class="time-grid">
-        <button class="time-btn" data-minutes="15">15 min</button>
-        <button class="time-btn" data-minutes="30">30 min</button>
-        <button class="time-btn" data-minutes="45">45 min</button>
-        <button class="time-btn" data-minutes="60">1 hour</button>
-        <button class="time-btn" data-minutes="90">1.5 hours</button>
-        <button class="time-btn" data-minutes="120">2 hours</button>
-        <button class="time-btn" data-minutes="180">3 hours</button>
+      <div class="time-wheel-wrap">
+        <div class="time-wheel" id="time-wheel">
+          <div class="tw-spacer"></div>
+          <div class="tw-item" data-minutes="15">15 min</div>
+          <div class="tw-item" data-minutes="30">30 min</div>
+          <div class="tw-item" data-minutes="45">45 min</div>
+          <div class="tw-item" data-minutes="60">1 hour</div>
+          <div class="tw-item" data-minutes="90">1.5 hours</div>
+          <div class="tw-item" data-minutes="120">2 hours</div>
+          <div class="tw-item" data-minutes="180">3 hours</div>
+          <div class="tw-spacer"></div>
+        </div>
+        <div class="tw-overlay-top"></div>
+        <div class="tw-overlay-bottom"></div>
+        <div class="tw-selector"></div>
       </div>
     </div>
 
@@ -377,7 +441,7 @@
 
         <div class="cat-item work" data-key="work">
           <div class="cat-header">
-            <span class="cat-icon">💼</span>
+            <span class="cat-icon">💻</span>
             <span class="cat-name">Work</span>
             <span class="cat-chosen"></span>
             <span class="cat-chevron">›</span>
@@ -391,7 +455,7 @@
 
         <div class="cat-item reset" data-key="reset">
           <div class="cat-header">
-            <span class="cat-icon">🌿</span>
+            <span class="cat-icon">🪷</span>
             <span class="cat-name">Reset</span>
             <span class="cat-chosen"></span>
             <span class="cat-chevron">›</span>
@@ -433,7 +497,7 @@
 
         <div class="cat-item chores" data-key="chores">
           <div class="cat-header">
-            <span class="cat-icon">🧹</span>
+            <span class="cat-icon">🧺</span>
             <span class="cat-name">Chores</span>
             <span class="cat-chosen"></span>
             <span class="cat-chevron">›</span>
@@ -481,11 +545,11 @@
 
   <script>
     const categoryMeta = {
-      work:    { label: "Work",    icon: "💼", color: "#4f8ef7" },
-      reset:   { label: "Reset",   icon: "🌿", color: "#a07de8" },
+      work:    { label: "Work",    icon: "💻", color: "#4f8ef7" },
+      reset:   { label: "Reset",   icon: "🪷", color: "#a07de8" },
       social:  { label: "Social",  icon: "💬", color: "#f4845f" },
       fitness: { label: "Fitness", icon: "🏃", color: "#52c48a" },
-      chores:  { label: "Chores",  icon: "🧹", color: "#f0b429" }
+      chores:  { label: "Chores",  icon: "🧺", color: "#f0b429" }
     };
 
     const allActivities = {
@@ -522,15 +586,34 @@
     const addTaskPicker = document.getElementById("add-task-picker");
     const addTaskToggle = document.getElementById("add-task-toggle");
 
-    // Time selection
-    document.querySelectorAll(".time-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".time-btn").forEach(b => b.classList.remove("selected"));
-        btn.classList.add("selected");
-        selectedMinutes = parseInt(btn.dataset.minutes);
-        updateBtn();
+    // Time wheel
+    const timeWheel = document.getElementById("time-wheel");
+    const twItems   = Array.from(timeWheel.querySelectorAll(".tw-item"));
+    const ITEM_H    = 40;
+
+    function getActiveIndex() {
+      return Math.min(Math.round(timeWheel.scrollTop / ITEM_H), twItems.length - 1);
+    }
+
+    function updateWheel() {
+      const idx = getActiveIndex();
+      twItems.forEach((el, i) => el.classList.toggle("active", i === idx));
+      selectedMinutes = parseInt(twItems[idx].dataset.minutes);
+      updateBtn();
+    }
+
+    timeWheel.addEventListener("scroll", updateWheel, { passive: true });
+
+    // Click any item to scroll it to center
+    twItems.forEach((el, i) => {
+      el.addEventListener("click", () => {
+        timeWheel.scrollTo({ top: i * ITEM_H, behavior: "smooth" });
       });
     });
+
+    // Init: select first item
+    timeWheel.scrollTop = 0;
+    updateWheel();
 
     // Category accordion + multi-select activities
     document.querySelectorAll(".cat-item").forEach(item => {
@@ -570,7 +653,7 @@
 
     function updateBtn() {
       const hasActivity = Object.values(selectedActivities).some(s => s.size > 0);
-      generateBtn.disabled = !(selectedMinutes && hasActivity);
+      generateBtn.disabled = !hasActivity;
     }
 
     function roundTo15(n) { return Math.max(15, Math.round(n / 15) * 15); }
