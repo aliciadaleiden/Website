@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Free Time Planner</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(to bottom, #ffffff, #8ecdd4);
+      background-attachment: fixed;
+      color: #2c2c2c;
+      min-height: 100vh;
+      padding: 48px 16px 80px;
+    }
+
+    header { text-align: center; margin-bottom: 48px; }
+    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+    header p { margin-top: 8px; color: #666; font-size: 1rem; }
+
+    .container { max-width: 600px; margin: 0 auto; }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .step { margin-bottom: 40px; }
+
+    /* Time buttons */
+    .time-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+
+    .time-btn {
+      padding: 10px 20px;
+      border-radius: 100px;
+      border: 2px solid rgba(0,0,0,0.12);
+      background: rgba(255,255,255,0.8);
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-weight: 500;
+    }
+
+    .time-btn:hover { border-color: #aaa; background: #fff; }
+    .time-btn.selected { background: #2c2c2c; border-color: #2c2c2c; color: #fff; }
+
+    /* Category accordion */
+    .category-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .cat-item {
+      background: rgba(255,255,255,0.85);
+      border-radius: 16px;
+      border: 2px solid transparent;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+
+    .cat-item.work     { --color: #4f8ef7; }
+    .cat-item.reset    { --color: #a07de8; }
+    .cat-item.social   { --color: #f4845f; }
+    .cat-item.fitness  { --color: #52c48a; }
+    .cat-item.chores   { --color: #f0b429; }
+
+    .cat-item.has-selection { border-color: var(--color); background: rgba(255,255,255,0.95); }
+
+    .cat-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 18px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .cat-header:hover { background: rgba(255,255,255,0.5); }
+    .cat-icon { font-size: 1.4rem; }
+    .cat-name { font-weight: 600; font-size: 0.95rem; }
+
+    .cat-chosen {
+      flex: 1;
+      font-size: 0.82rem;
+      color: var(--color);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cat-chevron {
+      font-size: 1.1rem;
+      color: #bbb;
+      transition: transform 0.2s;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .cat-item.expanded .cat-chevron { transform: rotate(90deg); }
+
+    .cat-activities {
+      display: none;
+      padding: 0 18px 16px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .cat-item.expanded .cat-activities { display: flex; }
+
+    .act-btn {
+      padding: 9px 18px;
+      border-radius: 100px;
+      border: 2px solid #eee;
+      background: #fafafa;
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: #444;
+    }
+
+    .act-btn:hover { border-color: var(--color); color: var(--color); }
+
+    .act-btn.selected {
+      background: color-mix(in srgb, var(--color) 12%, white);
+      border-color: var(--color);
+      color: var(--color);
+      font-weight: 600;
+    }
+
+    /* Generate button */
+    #generate-btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      border: none;
+      background: #2c2c2c;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      margin-bottom: 40px;
+    }
+
+    #generate-btn:hover { opacity: 0.85; }
+    #generate-btn:active { transform: scale(0.98); }
+    #generate-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* Results */
+    #results { display: none; margin-bottom: 56px; }
+    #results h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; }
+
+    .schedule-block {
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,0.9);
+      border-left: 4px solid var(--color);
+    }
+
+    .block-icon { font-size: 1.3rem; flex-shrink: 0; }
+    .block-info { flex: 1; min-width: 0; }
+
+    .block-category {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--color);
+      margin-bottom: 2px;
+    }
+
+    .block-activity { font-weight: 600; font-size: 0.95rem; }
+
+    .block-time-ctrl {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .block-time-ctrl button {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1.5px solid #ddd;
+      background: #fff;
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.12s;
+      flex-shrink: 0;
+    }
+
+    .block-time-ctrl button:hover { border-color: #aaa; }
+
+    .block-time-ctrl .time-val {
+      font-size: 0.82rem;
+      color: #888;
+      min-width: 46px;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .remove-block {
+      margin-left: 4px;
+      color: #ccc !important;
+      font-size: 1.1rem !important;
+      border-color: transparent !important;
+      background: transparent !important;
+    }
+
+    .remove-block:hover { color: #999 !important; border-color: #ddd !important; background: #fff !important; }
+
+    .total-time {
+      text-align: center;
+      margin-top: 16px;
+      color: #888;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    /* Add task */
+    #add-task-section { margin-top: 16px; }
+
+    #add-task-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.7);
+      border: 2px dashed #ccc;
+      border-radius: 14px;
+      padding: 14px 18px;
+      width: 100%;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #888;
+      transition: all 0.15s;
+    }
+
+    #add-task-toggle:hover { border-color: #aaa; color: #555; background: rgba(255,255,255,0.9); }
+
+    #add-task-picker {
+      display: none;
+      background: rgba(255,255,255,0.9);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-top: 8px;
+    }
+
+    #add-task-picker.open { display: block; }
+
+    .picker-category { margin-bottom: 14px; }
+    .picker-category:last-child { margin-bottom: 0; }
+
+    .picker-cat-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 8px;
+    }
+
+    .picker-acts { display: flex; flex-wrap: wrap; gap: 7px; }
+
+    .picker-act-btn {
+      padding: 7px 16px;
+      border-radius: 100px;
+      border: 2px solid #eee;
+      background: #fafafa;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: #444;
+    }
+
+    .picker-act-btn:hover { border-color: var(--color); color: var(--color); }
+
+    /* Bottom actions */
+    .results-actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 24px;
+    }
+
+    #start-over-btn {
+      background: none;
+      border: 2px solid rgba(0,0,0,0.15);
+      border-radius: 100px;
+      padding: 10px 24px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    #start-over-btn:hover { border-color: #aaa; }
+
+    /* Divider */
+    .divider { border: none; border-top: 1px solid rgba(0,0,0,0.1); margin: 0 0 48px; }
+
+    /* Quotes */
+    .quotes-section { text-align: center; }
+    .quotes-section .section-label { margin-bottom: 20px; }
+
+    #quote-btn {
+      padding: 12px 28px;
+      border-radius: 100px;
+      border: 2px solid rgba(0,0,0,0.15);
+      background: rgba(255,255,255,0.8);
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    #quote-btn:hover { border-color: #aaa; background: #fff; }
+
+    #quote-display {
+      display: none;
+      margin-top: 24px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 16px;
+      padding: 28px 24px;
+      text-align: left;
+    }
+
+    #quote-display blockquote {
+      font-size: 1.05rem;
+      line-height: 1.65;
+      font-style: italic;
+      color: #2c2c2c;
+      margin-bottom: 12px;
+    }
+
+    #quote-display cite { font-size: 0.85rem; color: #999; font-style: normal; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Free Time Planner</h1>
+    <p>Turn your free time into something intentional.</p>
+  </header>
+
+  <div class="container">
+
+    <div class="step">
+      <div class="section-label">How much time do you have?</div>
+      <div class="time-grid">
+        <button class="time-btn" data-minutes="15">15 min</button>
+        <button class="time-btn" data-minutes="30">30 min</button>
+        <button class="time-btn" data-minutes="45">45 min</button>
+        <button class="time-btn" data-minutes="60">1 hour</button>
+        <button class="time-btn" data-minutes="90">1.5 hours</button>
+        <button class="time-btn" data-minutes="120">2 hours</button>
+        <button class="time-btn" data-minutes="180">3 hours</button>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="section-label">What do you want to do?</div>
+      <div class="category-list">
+
+        <div class="cat-item work" data-key="work">
+          <div class="cat-header">
+            <span class="cat-icon">💼</span>
+            <span class="cat-name">Work</span>
+            <span class="cat-chosen"></span>
+            <span class="cat-chevron">›</span>
+          </div>
+          <div class="cat-activities">
+            <button class="act-btn" data-activity="Focused task">Focused task</button>
+            <button class="act-btn" data-activity="Organize to-do list">Organize to-do list</button>
+            <button class="act-btn" data-activity="Email catch-up">Email catch-up</button>
+          </div>
+        </div>
+
+        <div class="cat-item reset" data-key="reset">
+          <div class="cat-header">
+            <span class="cat-icon">🌿</span>
+            <span class="cat-name">Reset</span>
+            <span class="cat-chosen"></span>
+            <span class="cat-chevron">›</span>
+          </div>
+          <div class="cat-activities">
+            <button class="act-btn" data-activity="Read a book">Read a book</button>
+            <button class="act-btn" data-activity="Journal">Journal</button>
+            <button class="act-btn" data-activity="Draw / paint">Draw / paint</button>
+          </div>
+        </div>
+
+        <div class="cat-item social" data-key="social">
+          <div class="cat-header">
+            <span class="cat-icon">💬</span>
+            <span class="cat-name">Social</span>
+            <span class="cat-chosen"></span>
+            <span class="cat-chevron">›</span>
+          </div>
+          <div class="cat-activities">
+            <button class="act-btn" data-activity="Reply to messages">Reply to messages</button>
+            <button class="act-btn" data-activity="Call someone">Call someone</button>
+            <button class="act-btn" data-activity="Make plans">Make plans</button>
+          </div>
+        </div>
+
+        <div class="cat-item fitness" data-key="fitness">
+          <div class="cat-header">
+            <span class="cat-icon">🏃</span>
+            <span class="cat-name">Fitness</span>
+            <span class="cat-chosen"></span>
+            <span class="cat-chevron">›</span>
+          </div>
+          <div class="cat-activities">
+            <button class="act-btn" data-activity="Go for a walk">Go for a walk</button>
+            <button class="act-btn" data-activity="Stretch">Stretch</button>
+            <button class="act-btn" data-activity="Lift">Lift</button>
+          </div>
+        </div>
+
+        <div class="cat-item chores" data-key="chores">
+          <div class="cat-header">
+            <span class="cat-icon">🧹</span>
+            <span class="cat-name">Chores</span>
+            <span class="cat-chosen"></span>
+            <span class="cat-chevron">›</span>
+          </div>
+          <div class="cat-activities">
+            <button class="act-btn" data-activity="Tidy up room">Tidy up room</button>
+            <button class="act-btn" data-activity="Kitchen clean-up">Kitchen clean-up</button>
+            <button class="act-btn" data-activity="Do laundry">Do laundry</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <button id="generate-btn" disabled>Plan my time →</button>
+
+    <div id="results">
+      <h2>Here's your plan</h2>
+      <div id="schedule"></div>
+
+      <div id="add-task-section">
+        <button id="add-task-toggle">＋ Add a task</button>
+        <div id="add-task-picker"></div>
+      </div>
+
+      <div class="total-time" id="total-label"></div>
+
+      <div class="results-actions">
+        <button id="start-over-btn">Start over</button>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="quotes-section">
+      <div class="section-label">I want to scroll.</div>
+      <button id="quote-btn">Inspire Me</button>
+      <div id="quote-display">
+        <blockquote id="quote-text"></blockquote>
+        <cite id="quote-author"></cite>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const categoryMeta = {
+      work:    { label: "Work",    icon: "💼", color: "#4f8ef7" },
+      reset:   { label: "Reset",   icon: "🌿", color: "#a07de8" },
+      social:  { label: "Social",  icon: "💬", color: "#f4845f" },
+      fitness: { label: "Fitness", icon: "🏃", color: "#52c48a" },
+      chores:  { label: "Chores",  icon: "🧹", color: "#f0b429" }
+    };
+
+    const allActivities = {
+      work:    ["Focused task", "Organize to-do list", "Email catch-up"],
+      reset:   ["Read a book", "Journal", "Draw / paint"],
+      social:  ["Reply to messages", "Call someone", "Make plans"],
+      fitness: ["Go for a walk", "Stretch", "Lift"],
+      chores:  ["Tidy up room", "Kitchen clean-up", "Do laundry"]
+    };
+
+    const quotes = [
+      { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+      { text: "Every action you take is a vote for the type of person you wish to become.", author: "James Clear" },
+      { text: "Be the designer of your world and not merely the consumer of it.", author: "James Clear" },
+      { text: "You get what you repeat.", author: "James Clear" },
+      { text: "The way to get started is to quit talking and begin doing.", author: "Walt Disney" },
+      { text: "How we spend our days is, of course, how we spend our lives.", author: "Annie Dillard" },
+      { text: "Well done is better than well said.", author: "Benjamin Franklin" },
+      { text: "A year from now you may wish you had started today.", author: "Karen Lamb" }
+    ];
+
+    let selectedMinutes = null;
+    // key -> Set of activity strings
+    const selectedActivities = { work: new Set(), reset: new Set(), social: new Set(), fitness: new Set(), chores: new Set() };
+
+    // Live schedule items: [{ id, key, activity, duration }]
+    let scheduleItems = [];
+    let nextId = 0;
+
+    const generateBtn   = document.getElementById("generate-btn");
+    const resultsEl     = document.getElementById("results");
+    const scheduleEl    = document.getElementById("schedule");
+    const totalLabel    = document.getElementById("total-label");
+    const addTaskPicker = document.getElementById("add-task-picker");
+    const addTaskToggle = document.getElementById("add-task-toggle");
+
+    // Time selection
+    document.querySelectorAll(".time-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".time-btn").forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        selectedMinutes = parseInt(btn.dataset.minutes);
+        updateBtn();
+      });
+    });
+
+    // Category accordion + multi-select activities
+    document.querySelectorAll(".cat-item").forEach(item => {
+      const key    = item.dataset.key;
+      const header = item.querySelector(".cat-header");
+      const chosen = item.querySelector(".cat-chosen");
+
+      header.addEventListener("click", () => item.classList.toggle("expanded"));
+
+      item.querySelectorAll(".act-btn").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.stopPropagation();
+          const activity = btn.dataset.activity;
+
+          if (btn.classList.contains("selected")) {
+            btn.classList.remove("selected");
+            selectedActivities[key].delete(activity);
+          } else {
+            btn.classList.add("selected");
+            selectedActivities[key].add(activity);
+          }
+
+          const set = selectedActivities[key];
+          if (set.size === 0) {
+            item.classList.remove("has-selection");
+            chosen.textContent = "";
+          } else {
+            item.classList.add("has-selection");
+            const names = Array.from(set);
+            chosen.textContent = names.length === 1 ? names[0] : `${names.length} selected`;
+          }
+
+          updateBtn();
+        });
+      });
+    });
+
+    function updateBtn() {
+      const hasActivity = Object.values(selectedActivities).some(s => s.size > 0);
+      generateBtn.disabled = !(selectedMinutes && hasActivity);
+    }
+
+    function roundTo15(n) { return Math.max(15, Math.round(n / 15) * 15); }
+
+    function formatMin(mins) {
+      if (mins < 60) return `${mins} min`;
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return m ? `${h} hr ${m} min` : `${h} hr`;
+    }
+
+    function buildScheduleItems() {
+      const all = [];
+      Object.keys(categoryMeta).forEach(key => {
+        selectedActivities[key].forEach(activity => all.push({ key, activity }));
+      });
+
+      const total = selectedMinutes;
+      const count = all.length;
+      const baseTime = roundTo15(total / count);
+      let times = all.map(() => baseTime);
+
+      let sum = times.reduce((a, b) => a + b, 0);
+      while (sum > total && times.some(t => t > 15)) {
+        const maxIdx = times.indexOf(Math.max(...times));
+        times[maxIdx] = Math.max(15, times[maxIdx] - 15);
+        sum = times.reduce((a, b) => a + b, 0);
+      }
+
+      const leftover = total - times.reduce((a, b) => a + b, 0);
+      if (leftover >= 15) times[0] += leftover;
+
+      scheduleItems = all.map((item, i) => ({
+        id: nextId++,
+        key: item.key,
+        activity: item.activity,
+        duration: times[i]
+      }));
+    }
+
+    function renderScheduleBlocks() {
+      scheduleEl.innerHTML = "";
+      scheduleItems.forEach(item => {
+        const cat = categoryMeta[item.key];
+        const el = document.createElement("div");
+        el.className = "schedule-block";
+        el.style.setProperty("--color", cat.color);
+        el.innerHTML = `
+          <div class="block-icon">${cat.icon}</div>
+          <div class="block-info">
+            <div class="block-category">${cat.label}</div>
+            <div class="block-activity">${item.activity}</div>
+          </div>
+          <div class="block-time-ctrl">
+            <button class="time-dec" data-id="${item.id}" title="Less time">−</button>
+            <span class="time-val">${formatMin(item.duration)}</span>
+            <button class="time-inc" data-id="${item.id}" title="More time">+</button>
+            <button class="remove-block" data-id="${item.id}" title="Remove">×</button>
+          </div>
+        `;
+        scheduleEl.appendChild(el);
+      });
+      updateTotal();
+      renderAddTaskPicker();
+    }
+
+    function updateTotal() {
+      const total = scheduleItems.reduce((a, b) => a + b.duration, 0);
+      totalLabel.textContent = total > 0 ? `Total: ${formatMin(total)} planned` : "";
+    }
+
+    // Event delegation for time controls + remove
+    scheduleEl.addEventListener("click", e => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      const id = parseInt(btn.dataset.id);
+      const item = scheduleItems.find(i => i.id === id);
+      if (!item) return;
+
+      if (btn.classList.contains("time-dec")) {
+        if (item.duration > 15) {
+          item.duration -= 15;
+          renderScheduleBlocks();
+        }
+      } else if (btn.classList.contains("time-inc")) {
+        item.duration += 15;
+        renderScheduleBlocks();
+      } else if (btn.classList.contains("remove-block")) {
+        scheduleItems = scheduleItems.filter(i => i.id !== id);
+        renderScheduleBlocks();
+      }
+    });
+
+    // Add task picker
+    addTaskToggle.addEventListener("click", () => {
+      addTaskPicker.classList.toggle("open");
+    });
+
+    function renderAddTaskPicker() {
+      const inSchedule = new Set(scheduleItems.map(i => i.activity));
+      addTaskPicker.innerHTML = "";
+      addTaskPicker.classList.remove("open");
+
+      let hasAny = false;
+      Object.keys(categoryMeta).forEach(key => {
+        const cat = categoryMeta[key];
+        const available = allActivities[key].filter(a => !inSchedule.has(a));
+        if (available.length === 0) return;
+        hasAny = true;
+
+        const section = document.createElement("div");
+        section.className = "picker-category";
+        section.innerHTML = `<div class="picker-cat-label" style="color:${cat.color}">${cat.icon} ${cat.label}</div>`;
+
+        const acts = document.createElement("div");
+        acts.className = "picker-acts";
+        available.forEach(activity => {
+          const btn = document.createElement("button");
+          btn.className = "picker-act-btn";
+          btn.style.setProperty("--color", cat.color);
+          btn.textContent = activity;
+          btn.addEventListener("click", () => {
+            scheduleItems.push({ id: nextId++, key, activity, duration: 15 });
+            addTaskPicker.classList.remove("open");
+            renderScheduleBlocks();
+          });
+          acts.appendChild(btn);
+        });
+
+        section.appendChild(acts);
+        addTaskPicker.appendChild(section);
+      });
+
+      addTaskToggle.style.display = hasAny ? "flex" : "none";
+    }
+
+    generateBtn.addEventListener("click", () => {
+      buildScheduleItems();
+      renderScheduleBlocks();
+      resultsEl.style.display = "block";
+      resultsEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    document.getElementById("start-over-btn").addEventListener("click", () => {
+      selectedMinutes = null;
+      document.querySelectorAll(".time-btn").forEach(b => b.classList.remove("selected"));
+
+      Object.keys(selectedActivities).forEach(k => selectedActivities[k].clear());
+      document.querySelectorAll(".cat-item").forEach(item => {
+        item.classList.remove("has-selection", "expanded");
+        item.querySelector(".cat-chosen").textContent = "";
+        item.querySelectorAll(".act-btn").forEach(b => b.classList.remove("selected"));
+      });
+
+      scheduleItems = [];
+      resultsEl.style.display = "none";
+      addTaskPicker.classList.remove("open");
+      updateBtn();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    // Quotes
+    let lastQuoteIdx = -1;
+    document.getElementById("quote-btn").addEventListener("click", () => {
+      let idx;
+      do { idx = Math.floor(Math.random() * quotes.length); } while (idx === lastQuoteIdx && quotes.length > 1);
+      lastQuoteIdx = idx;
+      const q = quotes[idx];
+      document.getElementById("quote-text").textContent = `"${q.text}"`;
+      document.getElementById("quote-author").textContent = `— ${q.author}`;
+      document.getElementById("quote-display").style.display = "block";
+    });
+  </script>
+</body>
+</html>
