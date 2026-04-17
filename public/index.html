@@ -18,7 +18,7 @@
 
     header { text-align: center; margin-bottom: 48px; }
     header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
-    header p { margin-top: 8px; color: #666; font-size: 1rem; }
+    header p { margin-top: 10px; color: #777; font-size: 1.1rem; font-weight: 400; }
 
     .container { max-width: 600px; margin: 0 auto; }
 
@@ -36,12 +36,13 @@
     /* Time wheel */
     .time-wheel-wrap {
       position: relative;
-      height: 120px;
-      width: 220px;
-      border-radius: 16px;
+      height: 144px;
+      width: 260px;
+      margin: 0 auto;
+      border-radius: 20px;
       background: #fff;
       overflow: hidden;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }
 
     .time-wheel {
@@ -54,55 +55,56 @@
 
     .time-wheel::-webkit-scrollbar { display: none; }
 
-    .tw-spacer { height: 40px; }
+    .tw-spacer { height: 48px; }
 
     .tw-item {
-      height: 40px;
+      height: 48px;
       scroll-snap-align: center;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 0.95rem;
-      color: #ccc;
+      color: #c0c0c0;
       font-weight: 500;
       cursor: pointer;
       user-select: none;
-      transition: color 0.1s;
+      transition: color 0.12s, font-size 0.12s;
     }
 
     .tw-item.active {
       color: #2c2c2c;
-      font-size: 1.15rem;
+      font-size: 1.25rem;
       font-weight: 700;
     }
 
     .tw-overlay-top, .tw-overlay-bottom {
       position: absolute;
       left: 0; right: 0;
-      height: 44px;
+      height: 52px;
       pointer-events: none;
       z-index: 2;
     }
 
     .tw-overlay-top {
       top: 0;
-      background: linear-gradient(to bottom, #fff 30%, transparent);
+      background: linear-gradient(to bottom, rgba(255,255,255,0.97) 20%, transparent);
     }
 
     .tw-overlay-bottom {
       bottom: 0;
-      background: linear-gradient(to top, #fff 30%, transparent);
+      background: linear-gradient(to top, rgba(255,255,255,0.97) 20%, transparent);
     }
 
     .tw-selector {
       position: absolute;
       top: 50%;
-      left: 14px; right: 14px;
+      left: 18px; right: 18px;
       transform: translateY(-50%);
-      height: 40px;
-      border-top: 1.5px solid rgba(0,0,0,0.1);
-      border-bottom: 1.5px solid rgba(0,0,0,0.1);
-      border-radius: 8px;
+      height: 48px;
+      background: rgba(142,205,212,0.12);
+      border-top: 1.5px solid rgba(0,0,0,0.08);
+      border-bottom: 1.5px solid rgba(0,0,0,0.08);
+      border-radius: 10px;
       pointer-events: none;
       z-index: 1;
     }
@@ -402,7 +404,16 @@
 
     /* Quotes */
     .quotes-section { text-align: center; }
-    .quotes-section .section-label { margin-bottom: 20px; }
+
+    .scroll-heading {
+      font-size: 1.75rem;
+      font-weight: 700;
+      font-style: italic;
+      letter-spacing: -0.5px;
+      color: #2c2c2c;
+      margin-bottom: 24px;
+      line-height: 1.2;
+    }
 
     #quote-btn {
       padding: 12px 28px;
@@ -439,8 +450,8 @@
 </head>
 <body>
   <header>
-    <h1>Free Time Planner</h1>
-    <p>Turn your free time into something intentional.</p>
+    <h1>Make Your Free Time Count</h1>
+    <p>Decide what to do next.</p>
   </header>
 
   <div class="container">
@@ -453,10 +464,15 @@
           <div class="tw-item" data-minutes="15">15 min</div>
           <div class="tw-item" data-minutes="30">30 min</div>
           <div class="tw-item" data-minutes="45">45 min</div>
-          <div class="tw-item" data-minutes="60">1 hour</div>
-          <div class="tw-item" data-minutes="90">1.5 hours</div>
-          <div class="tw-item" data-minutes="120">2 hours</div>
-          <div class="tw-item" data-minutes="180">3 hours</div>
+          <div class="tw-item" data-minutes="60">1 hr</div>
+          <div class="tw-item" data-minutes="75">1 hr 15 min</div>
+          <div class="tw-item" data-minutes="90">1 hr 30 min</div>
+          <div class="tw-item" data-minutes="105">1 hr 45 min</div>
+          <div class="tw-item" data-minutes="120">2 hr</div>
+          <div class="tw-item" data-minutes="135">2 hr 15 min</div>
+          <div class="tw-item" data-minutes="150">2 hr 30 min</div>
+          <div class="tw-item" data-minutes="165">2 hr 45 min</div>
+          <div class="tw-item" data-minutes="180">3 hr</div>
           <div class="tw-spacer"></div>
         </div>
         <div class="tw-overlay-top"></div>
@@ -485,7 +501,7 @@
 
         <div class="cat-item reset" data-key="reset">
           <div class="cat-header">
-            <span class="cat-icon">🪷</span>
+            <span class="cat-icon">🧘‍♀️</span>
             <span class="cat-name">Reset</span>
             <span class="cat-chosen"></span>
             <span class="cat-chevron">›</span>
@@ -513,7 +529,7 @@
 
         <div class="cat-item fitness" data-key="fitness">
           <div class="cat-header">
-            <span class="cat-icon">🏃</span>
+            <span class="cat-icon">🏃‍♀️</span>
             <span class="cat-name">Fitness</span>
             <span class="cat-chosen"></span>
             <span class="cat-chevron">›</span>
@@ -563,7 +579,7 @@
     <hr class="divider" />
 
     <div class="quotes-section">
-      <div class="section-label">I want to scroll.</div>
+      <div class="scroll-heading">I want to scroll.</div>
       <button id="quote-btn">Inspire Me</button>
       <div id="quote-display">
         <blockquote id="quote-text"></blockquote>
@@ -576,9 +592,9 @@
   <script>
     const categoryMeta = {
       work:    { label: "Work",    icon: "💻", color: "#4f8ef7" },
-      reset:   { label: "Reset",   icon: "🪷", color: "#a07de8" },
+      reset:   { label: "Reset",   icon: "🧘‍♀️", color: "#a07de8" },
       social:  { label: "Social",  icon: "💬", color: "#f4845f" },
-      fitness: { label: "Fitness", icon: "🏃", color: "#52c48a" },
+      fitness: { label: "Fitness", icon: "🏃‍♀️", color: "#52c48a" },
       chores:  { label: "Chores",  icon: "🧺", color: "#f0b429" }
     };
 
@@ -619,7 +635,7 @@
     // Time wheel
     const timeWheel = document.getElementById("time-wheel");
     const twItems   = Array.from(timeWheel.querySelectorAll(".tw-item"));
-    const ITEM_H    = 40;
+    const ITEM_H    = 48;
 
     function getActiveIndex() {
       return Math.min(Math.round(timeWheel.scrollTop / ITEM_H), twItems.length - 1);
