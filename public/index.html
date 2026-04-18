@@ -16,9 +16,9 @@
       padding: 48px 16px 80px;
     }
 
-    header { text-align: center; margin-bottom: 48px; }
-    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
-    header p { margin-top: 10px; color: #777; font-size: 1.1rem; font-weight: 400; }
+    header { text-align: center; margin-bottom: 36px; }
+    header h1 { font-size: 2rem; font-weight: 500; letter-spacing: 0.01em; color: #3a3a3a; }
+    header p { margin-top: 8px; color: #888; font-size: 1rem; font-weight: 400; }
 
     .container { max-width: 600px; margin: 0 auto; }
 
@@ -167,6 +167,7 @@
       padding: 0 16px 14px;
       gap: 8px;
       flex-wrap: wrap;
+      justify-content: center;
     }
 
     .cat-item.expanded .cat-activities { display: flex; }
@@ -174,8 +175,8 @@
     .act-btn {
       padding: 10px 22px;
       border-radius: 100px;
-      border: 2px solid #e0e0e0;
-      background: rgba(255,255,255,0.7);
+      border: 1.5px solid rgba(0,0,0,0.08);
+      background: #ffffff;
       font-size: 0.88rem;
       font-weight: 500;
       cursor: pointer;
@@ -197,22 +198,22 @@
       display: block;
       width: 100%;
       padding: 17px;
-      border-radius: 20px;
-      border: none;
-      background: #111111;
-      color: #fff;
+      border-radius: 100px;
+      border: 1.5px solid rgba(46,120,135,0.3);
+      background: #ffffff;
+      color: #1e6978;
       font-size: 1rem;
       font-weight: 600;
       cursor: pointer;
-      transition: opacity 0.15s, transform 0.1s;
+      transition: all 0.2s;
       margin-bottom: 40px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.28);
-      letter-spacing: 0.01em;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      letter-spacing: 0.02em;
     }
 
-    #generate-btn:hover { opacity: 0.82; }
+    #generate-btn:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.12); transform: translateY(-1px); }
     #generate-btn:active { transform: scale(0.98); }
-    #generate-btn:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
+    #generate-btn:disabled { opacity: 1; cursor: not-allowed; }
 
     /* Results */
     #results { display: none; margin-bottom: 56px; }
@@ -408,47 +409,81 @@
     /* Quotes */
     .quotes-section { text-align: center; }
 
+    .scroll-heading-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
     .scroll-heading {
       font-size: 2rem;
-      font-weight: 700;
-      font-style: italic;
-      letter-spacing: -0.6px;
-      color: #2c2c2c;
-      margin-bottom: 28px;
+      font-weight: 500;
+      font-style: normal;
+      letter-spacing: 0.01em;
+      color: #3a3a3a;
       line-height: 1.2;
     }
 
     #quote-btn {
-      padding: 12px 28px;
+      padding: 11px 28px;
       border-radius: 100px;
-      border: 2px solid rgba(0,0,0,0.15);
-      background: rgba(255,255,255,0.8);
+      border: 1.5px solid rgba(0,0,0,0.18);
+      background: rgba(255,255,255,0.75);
       font-size: 0.95rem;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.2s;
     }
 
-    #quote-btn:hover { border-color: #aaa; background: #fff; }
+    #quote-btn:hover {
+      background: #fff;
+      border-color: rgba(0,0,0,0.28);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+      transform: translateY(-1px);
+    }
 
     #quote-display {
-      display: none;
-      margin-top: 24px;
-      background: rgba(255,255,255,0.85);
-      border-radius: 16px;
-      padding: 28px 24px;
+      max-width: 500px;
+      margin: 20px auto 0;
+      background: rgba(255,255,255,0.62);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 20px;
+      padding: 22px 26px 20px;
       text-align: left;
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      pointer-events: none;
     }
+
+    #quote-display.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
 
     #quote-display blockquote {
       font-size: 1.05rem;
-      line-height: 1.65;
-      font-style: italic;
+      line-height: 1.7;
+      font-style: normal;
       color: #2c2c2c;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
+      position: relative;
     }
 
-    #quote-display cite { font-size: 0.85rem; color: #999; font-style: normal; }
+    #quote-display cite {
+      font-size: 0.92rem;
+      color: rgba(44,44,44,0.55);
+      font-style: normal;
+      display: block;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -476,6 +511,26 @@
           <div class="tw-item" data-minutes="150">2 hr 30 min</div>
           <div class="tw-item" data-minutes="165">2 hr 45 min</div>
           <div class="tw-item" data-minutes="180">3 hr</div>
+          <div class="tw-item" data-minutes="195">3 hr 15 min</div>
+          <div class="tw-item" data-minutes="210">3 hr 30 min</div>
+          <div class="tw-item" data-minutes="225">3 hr 45 min</div>
+          <div class="tw-item" data-minutes="240">4 hr</div>
+          <div class="tw-item" data-minutes="255">4 hr 15 min</div>
+          <div class="tw-item" data-minutes="270">4 hr 30 min</div>
+          <div class="tw-item" data-minutes="285">4 hr 45 min</div>
+          <div class="tw-item" data-minutes="300">5 hr</div>
+          <div class="tw-item" data-minutes="315">5 hr 15 min</div>
+          <div class="tw-item" data-minutes="330">5 hr 30 min</div>
+          <div class="tw-item" data-minutes="345">5 hr 45 min</div>
+          <div class="tw-item" data-minutes="360">6 hr</div>
+          <div class="tw-item" data-minutes="375">6 hr 15 min</div>
+          <div class="tw-item" data-minutes="390">6 hr 30 min</div>
+          <div class="tw-item" data-minutes="405">6 hr 45 min</div>
+          <div class="tw-item" data-minutes="420">7 hr</div>
+          <div class="tw-item" data-minutes="435">7 hr 15 min</div>
+          <div class="tw-item" data-minutes="450">7 hr 30 min</div>
+          <div class="tw-item" data-minutes="465">7 hr 45 min</div>
+          <div class="tw-item" data-minutes="480">8 hr</div>
           <div class="tw-spacer"></div>
         </div>
         <div class="tw-overlay-top"></div>
@@ -582,8 +637,10 @@
     <hr class="divider" />
 
     <div class="quotes-section">
-      <div class="scroll-heading">I want to scroll.</div>
-      <button id="quote-btn">Inspire Me</button>
+      <div class="scroll-heading-row">
+        <div class="scroll-heading">Still Want to Scroll?</div>
+        <button id="quote-btn">Read this</button>
+      </div>
       <div id="quote-display">
         <blockquote id="quote-text"></blockquote>
         <cite id="quote-author"></cite>
@@ -992,14 +1049,26 @@
 
     // Quotes
     let lastQuoteIdx = -1;
+    const quoteDisplay = document.getElementById("quote-display");
+
+    function showQuote(q) {
+      document.getElementById("quote-text").textContent = `"${q.text}"`;
+      document.getElementById("quote-author").textContent = q.author;
+      quoteDisplay.classList.add("visible");
+    }
+
     document.getElementById("quote-btn").addEventListener("click", () => {
       let idx;
       do { idx = Math.floor(Math.random() * quotes.length); } while (idx === lastQuoteIdx && quotes.length > 1);
       lastQuoteIdx = idx;
       const q = quotes[idx];
-      document.getElementById("quote-text").textContent = `"${q.text}"`;
-      document.getElementById("quote-author").textContent = `— ${q.author}`;
-      document.getElementById("quote-display").style.display = "block";
+
+      if (quoteDisplay.classList.contains("visible")) {
+        quoteDisplay.classList.remove("visible");
+        setTimeout(() => showQuote(q), 300);
+      } else {
+        showQuote(q);
+      }
     });
   </script>
 </body>
